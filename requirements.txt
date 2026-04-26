@@ -2,5 +2,7 @@ pandas
 numpy
 matplotlib
 seaborn
-sqlalchemy
+sqlalchemy psycopg2-binary
 logging
+python-dotenv
+os
