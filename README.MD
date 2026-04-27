@@ -241,3 +241,6 @@ pytest test/
 - [ ] Deployment (FastAPI)
 
 ---
+
+![Hotel Performance Optimizer Architecture](assets/project_articulate.png)
+
