@@ -30,44 +30,49 @@ PostgreSQL / Snowflake / SQL Server
 
 ```
 hotel_performance_optimizer/
+│               
 │
-├── artifacts/                    # Saved model artifacts (.pkl, .joblib)
+├── artifacts/                        # Saved model artifacts (.pkl, .joblib)
 │
 ├── src/
 │   ├── components/
-│   │   ├── data_ingestion.py     # Loads data from DB into pipeline
-│   │   └── kpi_engine.py         # Python KPI logic (ADR, RevPAR, Occupancy)
+│   │   ├── data_ingestion.py
+│   │   └── kpi_engine.py
 │   │
 │   ├── forecasting/
-│   │   ├── feature_engineering.py  # Feature creation from raw bookings
-│   │   ├── demand_forecast.py      # Demand forecasting model
-│   │   ├── adr_forecast.py         # ADR forecasting model
-│   │   ├── revpar_forecast.py      # Derived RevPAR forecast
-│   │   └── model_utils.py          # Shared model helpers (save, load, metrics)
+│   │   ├── feature_engineering.py
+│   │   ├── demand_forecast.py
+│   │   ├── adr_forecast.py
+│   │   ├── revpar_forecast.py
+│   │   └── model_utils.py
 │   │
 │   ├── pipelines/
-│   │   ├── train_pipeline.py       # Orchestrates training end-to-end
-│   │   ├── predict_pipeline.py     # Runs predictions on new data
-│   │   └── evaluate_pipeline.py   # Evaluates model accuracy (MAPE, RMSE)
+│   │   ├── train_pipeline.py
+│   │   ├── predict_pipeline.py
+│   │   └── evaluate_pipeline.py
 │   │
-│   └── sql_queries/
-│       └── kpi_engine.sql          # SQL-certified KPI definitions
+│   └── streamlit_app/
+│       ├── main.py
+│       └── pages/
+│           ├── revenue_dashboard.py
+│           ├── forecast_view.py
+│           ├── backtest_results.py
+│           └── what_if_analysis.py
 │
 ├── Notebook/
-│   └── EDA.ipynb                  # Exploratory data analysis
+│   └── EDA.ipynb
 │
 ├── test/
 │   ├── test_feature_generation.py
 │   ├── test_forecast_sanity.py
-│   └── Test_kpi_definitions.py
+│   └── test_kpi_definitions.py
 │
-├── .env                           # DB credentials & config (not committed)
+├── .env
 ├── .gitignore
-├── exception.py                   # Custom exception handling
-├── loggrer.py                     # Logging configuration
+├── exception.py
+├── logger.py
 ├── requirements.txt
 └── README.md
-```
 
 ---
 
