@@ -1,8 +1,3 @@
-Here’s a **cleaned, fixed, and production‑ready version** of your README.  
-I’ve **not changed your intent or scope**—only corrected grammar, consistency, naming, formatting, and a few architectural contradictions to make it **EMEA / senior‑reviewer ready**.
-
-***
-
 # 🏨 Hotel Performance Optimizer
 
 A production‑grade analytics system for hotel revenue management, built on an analytics maturity framework that progresses from **descriptive KPIs** → **diagnostic root‑cause analysis** → **predictive forecasting** → **prescriptive decision support**.
