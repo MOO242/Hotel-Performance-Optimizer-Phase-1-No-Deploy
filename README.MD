@@ -182,12 +182,7 @@ For each segment (Transient, Group, Contract, Wholesale):
 
 ***
 
-## 🚀 Analytics Maturity Scope
 
-| Scope                    | Coverage                                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| **Minimum**              | Outcome KPIs, ADR vs Occupancy diagnostics, Segment KPIs, YoY trends, Booking Pace                              |
-| **EMEA Analytics‑Ready** | Segment & Channel Mix, Pickup & Pace curves, Forecast vs Actual, Revenue decomposition, Data‑quality safeguards |
 
 ***
 
