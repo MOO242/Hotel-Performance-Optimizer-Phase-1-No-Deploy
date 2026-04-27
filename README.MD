@@ -26,6 +26,8 @@ PostgreSQL / Snowflake / SQL Server
 
 ---
 
+---
+
 ## 🗂️ Project Structure
 
 hotel_performance_optimizer/
