@@ -75,11 +75,6 @@ A production‑grade analytics system for hotel revenue management, built on an 
     ├── requirements.txt
     └── README.md
 
-✅ **Fixes applied**
-
-*   `Notebook/` → `notebooks/` (standard convention)
-*   `test/` → `tests/`
-*   Naming consistency (snake\_case everywhere)
 
 ***
 
