@@ -275,5 +275,7 @@ pytest tests/
 ***
 
 ![Hotel Performance Optimizer Architecture](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Project%20Articulate.png)
+  
+
 
 ***
