@@ -4,6 +4,12 @@ from sqlalchemy import create_engine, text
 from src.components.exception import CustomException
 from dotenv import load_dotenv
 from src.components.logger import logger
+from src.components.data_validation import (
+    CodeValidation,
+    critical_columns,
+    nullable_columns,
+    schema_,
+)
 
 load_dotenv()
 
@@ -53,37 +59,31 @@ class SQLIngestionEngine:
     def __init__(self, engine):
         self.engine = engine
 
-    def ingest(self, file: str, table_name: str, schema: str = None):
+    def ingest(self, df: pd.DataFrame, table_name: str, schema: str = None):
         """
         Ingest CSV into PostgreSQL table.
         """
-        logger.info(f"Starting ingestion: file={file}, table={table_name}")
-
-        file_path = os.path.join("Notebook", file)
-
-        if not os.path.exists(file_path):
-            raise CustomException(f"File not found: {file_path}")
+        logger.info(f"Starting ingestion: for table={table_name}")
 
         try:
-            df = pd.read_csv(file_path)
 
-            logger.info(f"Loaded CSV: {df.shape} rows")
+            logger.info(f"Data Shape: {df.shape} rows")
 
             df.to_sql(
                 table_name,
                 self.engine,
                 schema=schema,
-                if_exists="append",
+                if_exists="replace",
                 index=False,
                 chunksize=5000,
             )
 
-            logger.info(f"Data inserted into {table_name}")
+            logger.info(f"Successfully inserted into {table_name}")
 
             return self.verify(table_name)
 
         except Exception as e:
-            logger.error(f"Ingestion failed for {file} → {table_name}: {e}")
+            logger.error(f"Ingestion failed for {table_name}: {e}")
             raise CustomException(e)
 
     def verify(self, table_name: str):
@@ -139,5 +139,13 @@ class DataLoader:
 # -----------------------------
 
 if __name__ == "__main__":
+
+    validation = CodeValidation()
     engine_obj = SQLIngestionEngine(engine)
-    engine_obj.ingest("dim_date.csv", "dim_date")
+
+    validation.get_file("fact_aggregated_bookings.csv")
+    validation.data_convertor()
+    validation.check_nulls(critical_columns)
+    validation.check_data_types(schema_)
+
+    engine_obj.ingest(validation.df, "fact_aggregated")
