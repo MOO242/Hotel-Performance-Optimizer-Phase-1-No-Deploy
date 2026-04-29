@@ -1,26 +1,70 @@
 import pandas as pd
 import os
 
-from sqlalchemy import false
 from src.components.exception import CustomException
 from src.components.logger import logger
 
 
 class CodeValidation:
+    """
+    A utility class for validating raw booking datasets before ingestion.
+
+    This class performs:
+    - File loading
+    - NULL validation (with critical vs. non‑critical columns)
+    - Data type validation against a schema
+    - Optional data type conversions
+
+    Designed for use inside an ETL/ELT pipeline before pushing data
+    into a warehouse or feature store.
+    """
 
     def get_file(self, file):
-        self.file = os.path.join("Notebook", file)
-        self.df = pd.read_csv(self.file)
-        return self.df
+        """
+        Load a CSV file from the Notebook directory into a pandas DataFrame.
+
+        Args:
+            file (str): The filename inside the Notebook/ directory.
+
+        Returns:
+            pd.DataFrame: Loaded DataFrame stored in self.df.
+
+        Raises:
+            CustomException: If file loading fails.
+        """
+        try:
+            self.file = os.path.join("Notebook", file)
+            self.df = pd.read_csv(self.file)
+            return self.df
+        except Exception as e:
+            raise CustomException(e)
 
     def check_nulls(self, critical_columns):
+        """
+        Validate NULL values in the dataset.
 
+        - Saves all NULL rows to artifacts/<file>.NULL.csv
+        - Flags critical columns that must never contain NULLs
+        - Allows non‑critical NULLs to pass
+
+        Args:
+            critical_columns (list[str]): Columns that cannot contain NULL values.
+
+        Returns:
+            bool:
+                True  → No NULLs OR only non‑critical NULLs
+                False → Critical NULLs found
+
+        Raises:
+            CustomException: If validation fails unexpectedly.
+        """
         try:
             logger.info(f"Check NULL's started for {self.file}")
 
             null_rows_df = self.df[self.df.isnull().any(axis=1)]
 
             if not null_rows_df.empty:
+                # Identify critical NULLs
                 critical_nulls = [
                     col
                     for col in critical_columns
@@ -29,9 +73,10 @@ class CodeValidation:
 
                 cols_null_rows = self.df.columns[self.df.isnull().any()].to_list()
                 logger.error(
-                    f"{len(null_rows_df)} There is NULL in {self.file} {cols_null_rows}"
+                    f"{len(null_rows_df)} NULL rows found in {self.file}: {cols_null_rows}"
                 )
 
+                # Save NULL rows
                 null_rows_df.to_csv(
                     os.path.join(
                         "artifacts", f"{os.path.basename(self.file)}.NULL.csv"
@@ -39,46 +84,61 @@ class CodeValidation:
                     index=False,
                 )
                 logger.info(
-                    f"The NULL's rows saved to artifacts/NULL.csv for {self.file}"
+                    f"NULL rows saved to artifacts/{os.path.basename(self.file)}.NULL.csv"
                 )
 
                 if len(critical_nulls) > 0:
-                    logger.error(f"CRITICAL: {critical_nulls} has NULLs!")
+                    logger.error(f"CRITICAL: {critical_nulls} contain NULL values!")
                     return False
-                logger.info("Only minor NULLs found. Proceeding with ingestion.")
+
+                logger.info("Only non‑critical NULLs found. Proceeding with ingestion.")
                 return True
+
             else:
-                logger.info(f"Null check passed - no nulls found in {self.file}")
+                logger.info(f"No NULLs found in {self.file}")
                 return True
 
         except Exception as e:
-            logger.error(f"There is NULL")
+            logger.error("NULL validation failed.")
             raise CustomException(e)
 
     def data_convertor(self):
+        """
+        Convert selected columns into their correct data types.
 
-        # self.df["booking_date"] = self.df["booking_date"].astype("datetime64[ns]")
+        Notes:
+            - Only check_in_date is currently active.
+            - Other conversions are commented out for incremental rollout.
+        """
         self.df["check_in_date"] = self.df["check_in_date"].astype("datetime64[ns]")
-        # self.df["checkout_date"] = self.df["checkout_date"].astype("datetime64[ns]")
-        # self.df["ratings_given"] = self.df["ratings_given"].astype("Int64")
-        # self.df["nights"] = self.df["nights"].astype("Int64")
-        # self.df["revenue_generated"] = self.df["revenue_generated"].astype("float64")
-        # self.df["revenue_realized"] = self.df["revenue_realized"].astype("float64")
 
     def check_data_types(self, schema_):
+        """
+        Validate each column's data type against a predefined schema.
 
+        Args:
+            schema_ (dict): Mapping of column → expected dtype (as pandas dtype string).
+
+        Logs:
+            - INFO when a column matches expected dtype
+            - ERROR when a mismatch is found
+
+        Raises:
+            CustomException: If validation fails unexpectedly.
+        """
         try:
             logger.info(f"Check data type started for {self.file}")
 
             for column, expected in schema_.items():
                 if column in self.df.columns:
-                    d_type = self.df[column].dtypes
-                    if d_type == expected:
-                        logger.info(f"Yes for {self.df[column].dtypes}")
+                    actual = self.df[column].dtypes
+                    if actual == expected:
+                        logger.info(f"{column}: OK ({actual})")
                     else:
                         logger.error(
-                            f"Type Mismatch in {column}: Excepted:{expected}:I got {self.df[column].dtypes}"
+                            f"Type Mismatch in {column}: Expected {expected}, got {actual}"
                         )
+
         except Exception as e:
             raise CustomException(e)
 
