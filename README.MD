@@ -273,6 +273,7 @@ pytest tests/
 *   [ ] API & deployment (FastAPI)
 
 ***
-![Hotel Performance Optimizer Roadmap](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Roadmap.svg)
+![Hotel Performance Optimizer Roadmap](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Roadmap.jpg)
+
 
 ***
