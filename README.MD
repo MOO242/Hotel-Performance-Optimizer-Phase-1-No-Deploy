@@ -4,7 +4,7 @@ A production‑grade analytics and decision‑intelligence system for hotel reve
 
 ---
 
-## 📐 Architecture Overview (Updated)
+## 📐 Architecture Overview
 
 ```
 SQL Databases (PostgreSQL / Snowflake / SQL Server)
