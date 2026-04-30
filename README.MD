@@ -49,7 +49,7 @@ BI & Apps
 
 ---
 
-## 🗂️ Project Structure (Updated)
+## 🗂️ Project Structure 
 
 ```
 hotel_performance_optimizer/
@@ -110,9 +110,7 @@ hotel_performance_optimizer/
 
 ---
 
-## 📊 KPI Framework (Updated)
-
-Your 10‑layer KPI maturity model stays the same — but now it aligns with the architecture:
+## 📊 KPI Framework 
 
 - **Layer 1–2:** Outcome KPIs + Drivers  
 - **Layer 3–7:** Demand, Segments, Channels, Inventory  
@@ -120,18 +118,17 @@ Your 10‑layer KPI maturity model stays the same — but now it aligns with the
 - **Layer 9:** Commercial Strategy KPIs  
 - **Layer 10:** Data Quality KPIs  
 
-This matches the flow in your diagram:  
 **KPI Engine → Diagnostic Layer → Forecast Layer → Prescriptive Layer**
 
 ---
 
-## 🛠️ Tech Stack (Updated)
+## 🛠️ Tech Stack 
 
 | Layer                    | Technology                                  |
 | ------------------------ | ------------------------------------------- |
 | Database                 | PostgreSQL / Snowflake / SQL Server         |
 | Data Modeling            | SQL Views, Fact/Dim Tables                  |
-| Data Validation          | Python, Pandas, Great Expectations (optional) |
+| Data Validation          | Python, Pandas,                             |
 | Feature Store            | Python, SQL                                 |
 | Machine Learning         | Scikit‑learn, MLflow                        |
 | Orchestration            | Apache Airflow                              |
@@ -144,7 +141,7 @@ This matches the flow in your diagram:
 
 ---
 
-## 📌 Roadmap (Updated to match your new diagram)
+## 📌 Roadmap 
 
 - [x] Architecture design (SQL → Validation → KPI → Forecast → Prescriptive)
 - [x] Data ingestion layer  
@@ -163,10 +160,7 @@ This matches the flow in your diagram:
 
 ---
 
-## 🖼️ Updated Roadmap Diagram  
-*(This section now matches the architecture in your VS Code screenshot)*
-
-You can embed your updated roadmap image like this:
+## 🖼️  Roadmap Diagram  
 
 ```markdown
 ![Hotel Performance Optimizer Roadmap](Roadmap.jpg)
