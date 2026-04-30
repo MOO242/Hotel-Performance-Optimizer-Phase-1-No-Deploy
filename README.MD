@@ -163,5 +163,5 @@ hotel_performance_optimizer/
 ## 🖼️  Roadmap Diagram  
 
 ```markdown
-![Hotel Performance Optimizer Roadmap](Roadmap.jpg)
+![Hotel Performance Optimizer Architecture](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Project%20Architecture.jpg)
 ```
