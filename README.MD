@@ -70,7 +70,6 @@ A production‑grade analytics system for hotel revenue management, built on an 
     ├── requirements.txt
     └── README.md
 
-
 ***
 
 ## 📊 KPI Framework
@@ -98,9 +97,9 @@ Executive‑level results. All downstream diagnostics explain movement in these 
 
 Foundational diagnostics.
 
-*   ADR vs Occupancy decomposition
-*   Revenue = ADR × Rooms Sold
-*   RevPAR = ADR × Occupancy
+* ADR vs Occupancy decomposition
+* Revenue = ADR × Rooms Sold
+* RevPAR = ADR × Occupancy
 
 > **Rule:** Every RevPAR movement must be explained through **ADR vs Occupancy**.
 
@@ -108,11 +107,11 @@ Foundational diagnostics.
 
 ### 📅 Layer 3 — Demand & Booking Health KPIs
 
-*   Gross & Net Bookings
-*   Cancellation Rate, No‑Show Rate
-*   Booking Lead Time, Length of Stay (LOS)
-*   Pickup (Daily / Weekly)
-*   Booking Pace vs Last Year & Budget
+* Gross & Net Bookings
+* Cancellation Rate, No‑Show Rate
+* Booking Lead Time, Length of Stay (LOS)
+* Pickup (Daily / Weekly)
+* Booking Pace vs Last Year & Budget
 
 ***
 
@@ -120,69 +119,67 @@ Foundational diagnostics.
 
 For each segment (Transient, Group, Contract, Wholesale):
 
-*   Room Revenue, Rooms Sold, ADR, RevPAR, Occupancy %
-*   Segment Mix %, Revenue Contribution %
-*   ADR Premium / Discount vs Total
+* Room Revenue, Rooms Sold, ADR, RevPAR, Occupancy %
+* Segment Mix %, Revenue Contribution %
+* ADR Premium / Discount vs Total
 
 ***
 
 ### 📡 Layer 5 — Channel & Source KPIs
 
-*   Channel Mix % (Direct, OTA, GDS, Voice)
-*   ADR by Channel, Net ADR
-*   OTA Dependency %, Cost of Sale %
+* Channel Mix % (Direct, OTA, GDS, Voice)
+* ADR by Channel, Net ADR
+* OTA Dependency %, Cost of Sale %
 
 ***
 
 ### 📈 Layer 6 — Time‑Based Comparison KPIs
 
-*   YoY, WoW, MoM % change
-*   YTD performance
-*   Rolling 7 / 14 / 30‑day trends
-*   Seasonality Index
+* YoY, WoW, MoM % change
+* YTD performance
+* Rolling 7 / 14 / 30‑day trends
+* Seasonality Index
 
 ***
 
 ### 🏨 Layer 7 — Distribution & Inventory Health
 
-*   Availability %
-*   Out‑of‑Order Rooms
-*   Sell‑Out Days
-*   Compression Nights
-*   Wash % *(Cancellations + No‑Shows)*
+* Availability %
+* Out‑of‑Order Rooms
+* Sell‑Out Days
+* Compression Nights
+* Wash % *(Cancellations + No‑Shows)*
 
 ***
 
 ### 🔮 Layer 8 — Forecast & Forward‑Looking KPIs
 
-*   On‑The‑Books (OTB) Revenue & ADR
-*   Forecast Occupancy & RevPAR
-*   Pickup Forecast
-*   Forecast Accuracy (MAPE, Error %)
-*   Budget Variance
+* On‑The‑Books (OTB) Revenue & ADR
+* Forecast Occupancy & RevPAR
+* Pickup Forecast
+* Forecast Accuracy (MAPE, Error %)
+* Budget Variance
 
 ***
 
 ### 🎯 Layer 9 — Commercial Strategy KPIs *(Advanced)*
 
-*   ADR Opportunity Index
-*   Price Elasticity
-*   Displacement Analysis (Group)
-*   BAR vs Achieved ADR
-*   Repeat Guest %, Loyalty Revenue %
+* ADR Opportunity Index
+* Price Elasticity
+* Displacement Analysis (Group)
+* BAR vs Achieved ADR
+* Repeat Guest %, Loyalty Revenue %
 
 ***
 
 ### 🛡️ Layer 10 — Data Quality & Governance KPIs
 
-*   Data Completeness %
-*   Missing ADR / Revenue counts
-*   Outlier detection flags
-*   KPI reconciliation checks
+* Data Completeness %
+* Missing ADR / Revenue counts
+* Outlier detection flags
+* KPI reconciliation checks
 
 ***
-
-
 
 ***
 
@@ -255,25 +252,5 @@ pytest tests/
 | Logging          | Python logging                      |
 | Testing          | Pytest                              |
 | Version Control  | Git                                 |
-
-***
-
-## 📌 Roadmap
-
-*   [x] Project architecture & structure
-*   [x] KPI framework definition
-*   [x] Data ingestion layer
-*   [x] Feature engineering
-*   [ ] KPI engine (Python + SQL‑certified metrics)
-*   [ ] Demand forecasting model
-*   [ ] ADR forecasting model
-*   [ ] RevPAR derived forecast
-*   [ ] Training & prediction pipelines
-*   [ ] Power BI / Tableau dashboards
-*   [ ] API & deployment (FastAPI)
-
-***
-![Hotel Performance Optimizer Roadmap](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Roadmap.jpg)
-
 
 ***

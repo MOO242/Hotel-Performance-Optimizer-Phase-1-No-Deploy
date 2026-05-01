@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-
 from src.components.exception import CustomException
 from src.components.logger import logger
 
@@ -20,18 +19,6 @@ class CodeValidation:
     """
 
     def get_file(self, file):
-        """
-        Load a CSV file from the Notebook directory into a pandas DataFrame.
-
-        Args:
-            file (str): The filename inside the Notebook/ directory.
-
-        Returns:
-            pd.DataFrame: Loaded DataFrame stored in self.df.
-
-        Raises:
-            CustomException: If file loading fails.
-        """
         try:
             self.file = os.path.join("Notebook", file)
             self.df = pd.read_csv(self.file)
@@ -40,24 +27,6 @@ class CodeValidation:
             raise CustomException(e)
 
     def check_nulls(self, critical_columns):
-        """
-        Validate NULL values in the dataset.
-
-        - Saves all NULL rows to artifacts/<file>.NULL.csv
-        - Flags critical columns that must never contain NULLs
-        - Allows non‑critical NULLs to pass
-
-        Args:
-            critical_columns (list[str]): Columns that cannot contain NULL values.
-
-        Returns:
-            bool:
-                True  → No NULLs OR only non‑critical NULLs
-                False → Critical NULLs found
-
-        Raises:
-            CustomException: If validation fails unexpectedly.
-        """
         try:
             logger.info(f"Check NULL's started for {self.file}")
 
@@ -91,7 +60,7 @@ class CodeValidation:
                     logger.error(f"CRITICAL: {critical_nulls} contain NULL values!")
                     return False
 
-                logger.info("Only non‑critical NULLs found. Proceeding with ingestion.")
+                logger.info("Only non-critical NULLs found. Proceeding with ingestion.")
                 return True
 
             else:
@@ -103,29 +72,10 @@ class CodeValidation:
             raise CustomException(e)
 
     def data_convertor(self):
-        """
-        Convert selected columns into their correct data types.
 
-        Notes:
-            - Only check_in_date is currently active.
-            - Other conversions are commented out for incremental rollout.
-        """
         self.df["check_in_date"] = self.df["check_in_date"].astype("datetime64[ns]")
 
     def check_data_types(self, schema_):
-        """
-        Validate each column's data type against a predefined schema.
-
-        Args:
-            schema_ (dict): Mapping of column → expected dtype (as pandas dtype string).
-
-        Logs:
-            - INFO when a column matches expected dtype
-            - ERROR when a mismatch is found
-
-        Raises:
-            CustomException: If validation fails unexpectedly.
-        """
         try:
             logger.info(f"Check data type started for {self.file}")
 
@@ -142,47 +92,33 @@ class CodeValidation:
         except Exception as e:
             raise CustomException(e)
 
+    def check_rules(self, rules):
 
-# Columns that can NEVER be null
-critical_columns = [
-    "booking_id",
-    "property_id",
-    "booking_date",
-    "check_in_date",
-    "checkout_date",
-    "no_guests",
-    "room_category",
-    "booking_platform",
-    "booking_status",
-    "rooms_sold",
-    "room_available",
-]
+        try:
+            for column, rule in rules.items():
 
-# Columns that CAN be null
-nullable_columns = [
-    "ratings_given",
-    "revenue_generated",
-    "revenue_realized",
-    "room_rate",
-    "nights",
-]
+                invalid_mask = (
+                    ~self.df[column]
+                    .dropna()
+                    .isin(rule["values"])
+                    .reindex(self.df.index, fill_value=False)
+                )
+                has_invalid = invalid_mask.any()
+                invalid_rows = self.df[invalid_mask]
 
-# schema for data type
-schema_ = {
-    "booking_id": "str",
-    "property_id": "str",
-    "booking_date": "datetime64[ns]",
-    "check_in_date": "datetime64[ns]",
-    "checkout_date": "datetime64[ns]",
-    "no_guests": "int64",
-    "room_category": "str",
-    "booking_platform": "str",
-    "booking_status": "str",
-    "ratings_given": "Int64",
-    "revenue_generated": "float64",
-    "revenue_realized": "float64",
-    "room_rate": "float64",
-    "nights": "Int64",
-    "room_available": "int64",
-    "rooms_sold": "int64",
-}
+                if has_invalid:
+                    logger.error(f"Rules Mismatch in {column}: Rule should be {rule}")
+
+                    invalid_rows.to_csv(
+                        os.path.join(
+                            "artifacts", f"{os.path.basename(self.file)}.RULES.csv"
+                        ),
+                        index=False,
+                    )
+                    return False
+
+            else:
+                logger.info(f"Rules are matching in {self.file}")
+                return True
+        except Exception as e:
+            raise CustomException(e)

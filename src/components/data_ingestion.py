@@ -4,10 +4,11 @@ from sqlalchemy import create_engine, text
 from src.components.exception import CustomException
 from dotenv import load_dotenv
 from src.components.logger import logger
-from src.components.data_validation import (
-    CodeValidation,
+from src.components.data_validation import CodeValidation
+from src.config import (
     critical_columns,
     nullable_columns,
+    rules,
     schema_,
 )
 
@@ -143,9 +144,10 @@ if __name__ == "__main__":
     validation = CodeValidation()
     engine_obj = SQLIngestionEngine(engine)
 
-    validation.get_file("fact_aggregated_bookings.csv")
+    validation.get_file("fact_bookings.csv")
     validation.data_convertor()
     validation.check_nulls(critical_columns)
     validation.check_data_types(schema_)
+    validation.check_rules(rules)
 
-    engine_obj.ingest(validation.df, "fact_aggregated")
+    engine_obj.ingest(validation.df, "fact_bookings")
