@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+- name: public
+  database: hotel_performance
+  schema: public
+  tables:
+  - name: fact_bookings
+  - name: fact_aggre_bookings
+  - name: dim_date
+  - name: dim_rooms
+  - name: dim_hotels

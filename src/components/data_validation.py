@@ -74,6 +74,13 @@ class CodeValidation:
     def data_convertor(self):
 
         self.df["check_in_date"] = self.df["check_in_date"].astype("datetime64[ns]")
+        self.df["checkout_date"] = self.df["checkout_date"].astype("datetime64[ns]")
+        self.df["property_id"] = self.df["property_id"].astype("str")
+        self.df["booking_date"] = self.df["booking_date"].astype("datetime64[ns]")
+        self.df["revenue_realized"] = self.df["revenue_realized"].astype("float64")
+        self.df["revenue_generated"] = self.df["revenue_generated"].astype("float64")
+        self.df["nights"] = self.df["nights"].astype("Int64")
+        self.df["ratings_given"] = self.df["ratings_given"].astype("Int64")
 
     def check_data_types(self, schema_):
         try:

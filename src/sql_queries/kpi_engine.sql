@@ -1,1 +1,0 @@
-SELECT * from cleaned_hotel_data
