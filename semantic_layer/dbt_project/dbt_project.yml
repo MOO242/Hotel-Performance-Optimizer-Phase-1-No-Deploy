@@ -2,7 +2,7 @@ name: 'hotel_optimizer'
 version: '1.0.0'
 profile: 'hotel_optimizer'
 
-model-paths: [ "models" ]
+model-paths: ["models"]
 
 models:
   hotel_optimizer:
