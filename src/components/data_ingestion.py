@@ -7,7 +7,6 @@ from src.components.logger import logger
 from src.components.data_validation import CodeValidation
 from src.config import (
     critical_columns,
-    nullable_columns,
     rules,
     schema_,
 )
