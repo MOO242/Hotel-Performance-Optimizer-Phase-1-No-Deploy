@@ -1,17 +1,11 @@
-from src.components.data_ingestion import DataLoader, engine
 from src.components.logger import logger
 from src.components.exception import CustomException
-
-Data = DataLoader(engine)
-bookings = Data.data_load("fct_bookings_enriched")
-metrics = Data.data_load("mtr_occupancy")
 
 
 class FeatureEngineering:
 
-    def __init__(self, bookings, metrics):
+    def __init__(self, bookings):
         self.bookings = bookings
-        self.metrics = metrics
 
     def calculate_lead_time(self):
         try:
@@ -19,8 +13,9 @@ class FeatureEngineering:
             self.bookings["lead_time"] = (
                 self.bookings["check_in_date"] - self.bookings["booking_date"]
             ).dt.days
+            logger.info("Calculating completed")
             return self.bookings
-
+            
         except Exception as e:
             logger.error("Wrong time")
             raise CustomException(e)
@@ -93,13 +88,3 @@ class FeatureEngineering:
         except Exception as e:
             logger.error(f"platform cancel rate calculation failed: {e}")
             raise CustomException(e)
-
-
-feature_engineer = FeatureEngineering(bookings, metrics)
-
-bookings = feature_engineer.calculate_lead_time()
-bookings = feature_engineer.calculate_cancellation_rate()
-bookings = feature_engineer.calculate_no_show_rate()
-bookings = feature_engineer.calculate_platform_cancel_rate()
-
-print(bookings.head())
