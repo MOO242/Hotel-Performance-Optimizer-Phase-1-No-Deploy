@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from src.components.exception import CustomException
 from dotenv import load_dotenv
 from src.components.logger import logger

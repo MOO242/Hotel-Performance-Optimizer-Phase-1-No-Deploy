@@ -6,4 +6,5 @@ sqlalchemy psycopg2-binary
 logging
 python-dotenv
 streamlit
+category_encoders
 os
