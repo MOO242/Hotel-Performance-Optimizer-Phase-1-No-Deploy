@@ -1,22 +1,25 @@
+import os
+import pickle
 import pandas as pd
-
+from dataclasses import dataclass
 from src.components.logger import logger
 from src.components.exception import CustomException
 
-from src.components.data_ingestion import DataLoader, engine
 
-from sklearn.preprocessing import LabelEncoder
-
-le = LabelEncoder()
-
-data = DataLoader(engine)
+@dataclass
+class DataTransformationConfig:
+    preprocessor_obj_file_path: str = os.path.join("artifacts", "preprocessor.pkl")
 
 
 class DataTransformation:
 
-    def __init__(self, features_data, kpi):
+    def __init__(
+        self,
+        features_data,
+    ):
         self.features_data = features_data
-        self.kpi = kpi
+        self.config = DataTransformationConfig()
+        self.preprocessor = {}
 
     def label_encode(self, column, mapping):
         try:
@@ -25,18 +28,26 @@ class DataTransformation:
 
             self.features_data[column + "_le"] = self.features_data[column].map(mapping)
 
+            self.preprocessor[column] = mapping
+
             logger.info(f"Label encoding complete for {column}")
             return self.features_data
 
         except Exception as e:
             raise CustomException(e)
 
-    def one_hot_encode(self, column):
+    def one_hot_encode(self, columns):
         try:
-            logger.info(f"One-Hot-encoding started for {column}")
-            self.features_data = pd.get_dummies(self.features_data, columns=OneHot)
 
-            logger.info(f"one-Hot encoding complete for {column}")
+            logger.info(f"One-Hot-encoding started for {columns}")
+
+            self.features_data = pd.get_dummies(
+                self.features_data, columns=columns, dtype=int
+            )
+
+            self.preprocessor["one_hot_columns"] = columns
+
+            logger.info(f"one-Hot encoding complete for {columns}")
             return self.features_data
 
         except Exception as e:
@@ -51,40 +62,25 @@ class DataTransformation:
                     self.features_data[column] == positive_value
                 ).astype(int)
 
+            self.preprocessor["binary_map"] = binary_map
             logger.info(f"Binary encode encoding complete for {binary_map}")
             return self.features_data
 
         except Exception as e:
             raise CustomException(e)
 
+    def save_preprocessor(self):
+        try:
+            logger.info("Saving preprocessor...")
+            os.makedirs("artifacts", exist_ok=True)
 
-features_data = data.data_load("features_enriched")
-kpi = data.data_load("mtr_occupancy")
+            with open(self.config.preprocessor_obj_file_path, "wb") as f:
 
-season_map = {"Low Season": 0, "High Season": 1, "Peak Season": 2}
-
-room_map = {"Standard": 0, "Elite": 1, "Premium": 2, "Presidential": 3}
-
-
-OneHot = ["city", "booking_channel", "booking_status"]
-binary_map = {"day_type": "weekeday", "category": "Luxury"}
-
-
-dataTransformation = DataTransformation(features_data, kpi)
-features_data = dataTransformation.label_encode("season", season_map)
-features_data = dataTransformation.label_encode("room_class", room_map)
-features_data = dataTransformation.one_hot_encode(OneHot)
-features_data = dataTransformation.binary_encode(binary_map)
-# Add this to verify encoding worked:
-print(
-    dataTransformation.features_data[
-        [
-            "season",
-            "season_le",
-            "room_class",
-            "room_class_le",
-            "day_type",
-            "day_type_bin",
-        ]
-    ].head()
-)
+                pickle.dump(self.preprocessor, f)
+            logger.info("Preprocessor saved!")
+            """ Test if the data is correct"""
+            with open("artifacts/preprocessor.pkl", "rb") as f:
+                preprocessor = pickle.load(f)
+                print(preprocessor)
+        except Exception as e:
+            raise CustomException(e)
