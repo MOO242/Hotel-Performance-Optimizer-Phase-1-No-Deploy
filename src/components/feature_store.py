@@ -81,7 +81,7 @@ if __name__ == "__main__":
     season_map = {"Low Season": 0, "High Season": 1, "Peak Season": 2}
     room_map = {"Standard": 0, "Elite": 1, "Premium": 2, "Presidential": 3}
     OneHot = ["city", "booking_channel", "booking_status"]
-    binary_map = {"day_type": "weekeday", "category": "Luxury"}
+    binary_map = {"day_type": "weekday", "category": "Luxury"}
 
     features_data = dataTransformation.label_encode("season", season_map)
     features_data = dataTransformation.label_encode("room_class", room_map)
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     features_data = dataTransformation.binary_encode(binary_map)
 
     """Save as Pki file in artifacts    """
+    
     dataTransformation.save_preprocessor()
 
     Feature_Store.save(dataTransformation.features_data, "features_transformed")

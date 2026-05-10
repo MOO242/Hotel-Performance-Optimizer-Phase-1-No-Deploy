@@ -4,6 +4,10 @@ import pandas as pd
 from dataclasses import dataclass
 from src.components.logger import logger
 from src.components.exception import CustomException
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
 
 
 @dataclass
@@ -19,68 +23,91 @@ class DataTransformation:
     ):
         self.features_data = features_data
         self.config = DataTransformationConfig()
-        self.preprocessor = {}
 
-    def label_encode(self, column, mapping):
+    def get_preprocessor(self):
+
         try:
 
-            logger.info(f"Label encoding started for {column}")
+            logger.info("pre-processing start")
+            numerical_columns = [
+                "lead_time",
+                "cancellation_rate",
+                "no_show_rate",
+                "platform_cancel_rate",
+                "hurdle_rate",
+            ]
+            nominal_columns = [
+                "city",
+                "day_type",
+                "room_type",
+                "booking_channel",
+            ]
 
-            self.features_data[column + "_le"] = self.features_data[column].map(mapping)
+            ordinal_columns = ["season", "room_class", "category"]
 
-            self.preprocessor[column] = mapping
+            # ─── 2. Define ordinal order (lowest → highest) ───
 
-            logger.info(f"Label encoding complete for {column}")
-            return self.features_data
+            ordinal_categories = [
+                ["Low Season", "Shoulder", "High Season", "Peak"],  # season
+                ["Standard", "Elite", "Premium", "Presidential"],  # room_class
+                ["Economy", "Luxury"],  # category
+            ]
 
-        except Exception as e:
-            raise CustomException(e)
-
-    def one_hot_encode(self, columns):
-        try:
-
-            logger.info(f"One-Hot-encoding started for {columns}")
-
-            self.features_data = pd.get_dummies(
-                self.features_data, columns=columns, dtype=int
+            num_pipeline = Pipeline(
+                steps=[
+                    ("imputer", SimpleImputer(strategy="median")),
+                    ("scaler", StandardScaler()),
+                ]
             )
 
-            self.preprocessor["one_hot_columns"] = columns
+            nominal_pipeline = Pipeline(
+                steps=[
+                    ("imputer", SimpleImputer(strategy="most_frequent")),
+                    ("one_hot_encoder", OneHotEncoder(handle_unknown="ignore")),
+                    ("scaler", StandardScaler(with_mean=False)),
+                ]
+            )
 
-            logger.info(f"one-Hot encoding complete for {columns}")
-            return self.features_data
+            # ─── 5. Ordinal categorical pipeline ───
+            ordinal_pipeline = Pipeline(
+                steps=[
+                    ("imputer", SimpleImputer(strategy="most_frequent")),
+                    (
+                        "ordinal_encoder",
+                        OrdinalEncoder(
+                            categories=ordinal_categories,  # ← the order YOU defined
+                            handle_unknown="use_encoded_value",  # don't crash on unseen
+                            unknown_value=-1,  # mark unknown as -1
+                        ),
+                    ),
+                    ("scaler", StandardScaler()),  # default (output is dense)
+                ]
+            )
 
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ("name", num_pipeline, numerical_columns),
+                    ("name", nominal_pipeline, nominal_columns),
+                    ("name", ordinal_pipeline, ordinal_columns),
+                ],
+                remainder="drop",
+            )
+
+            return preprocessor
         except Exception as e:
+            logger.error("pre-processing failed!")
             raise CustomException(e)
 
-    def binary_encode(self, binary_map):
-        try:
-            logger.info(f"binary encoding started for {list(binary_map.keys())}")
-            for column, positive_value in binary_map.items():
+    def initiate_data_transformation(self, train_path, test_path):
+        # We will fill this together
+        pass
 
-                self.features_data[column + "_bin"] = (
-                    self.features_data[column] == positive_value
-                ).astype(int)
 
-            self.preprocessor["binary_map"] = binary_map
-            logger.info(f"Binary encode encoding complete for {binary_map}")
-            return self.features_data
 
-        except Exception as e:
-            raise CustomException(e)
 
-    def save_preprocessor(self):
-        try:
-            logger.info("Saving preprocessor...")
-            os.makedirs("artifacts", exist_ok=True)
 
-            with open(self.config.preprocessor_obj_file_path, "wb") as f:
 
-                pickle.dump(self.preprocessor, f)
-            logger.info("Preprocessor saved!")
-            """ Test if the data is correct"""
-            with open("artifacts/preprocessor.pkl", "rb") as f:
-                preprocessor = pickle.load(f)
-                print(preprocessor)
-        except Exception as e:
-            raise CustomException(e)
+
+
+
+
