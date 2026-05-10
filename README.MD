@@ -266,6 +266,38 @@ hotel_performance_optimizer/
 - [ ] Power BI / Tableau dashboards  
 
 ---
+## Setup
+
+### Prerequisites
+- Python 3.12+
+- PostgreSQL with `fct_bookings_enriched` table loaded
+
+### Installation
+
+```bash
+# Clone the repo
+git clone https://github.com/MOO242/hotel-performance-optimizer.git
+cd hotel-performance-optimizer
+
+# Create virtual environment
+python -m venv env
+source env/bin/activate  # Linux/Mac
+# OR
+.\env\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run the pipeline
+python -m src.components.data_splitter
+```
+
+### License
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 ## 🖼️  Roadmap Diagram  
