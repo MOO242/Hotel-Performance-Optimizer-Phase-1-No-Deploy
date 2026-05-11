@@ -1,90 +1,143 @@
+from __future__ import annotations
+import pandas as pd
 from src.components.logger import logger
 from src.components.exception import CustomException
 
 
 class FeatureEngineering:
+    """
+    Apply feature engineering transformations to a hotel bookings dataset.
 
-    def __init__(self, bookings):
-        self.bookings = bookings
+    Parameters
+    ----------
+    bookings : pd.DataFrame
+        Raw bookings dataset loaded from the database.
+    """
 
-    def calculate_lead_time(self):
+    def __init__(self, bookings: pd.DataFrame):
+        self.bookings = bookings.copy()
+
+    # ---------------------------------------------------------
+    # 1. Lead Time
+    # ---------------------------------------------------------
+    def calculate_lead_time(self) -> pd.DataFrame:
+        """
+        Compute lead time (days between booking date and check-in date).
+        """
         try:
-            logger.info("Calculating lead time")
-            self.bookings["lead_time"] = (
-                self.bookings["check_in_date"] - self.bookings["booking_date"]
-            ).dt.days
-            logger.info("Calculating completed")
-            return self.bookings
-            
+            logger.info("Calculating lead_time feature")
+
+            df = self.bookings.copy()
+            df["lead_time"] = (df["check_in_date"] - df["booking_date"]).dt.days
+
+            logger.info("lead_time calculation complete")
+            self.bookings = df
+            return df
+
         except Exception as e:
-            logger.error("Wrong time")
+            logger.error("Lead time calculation failed")
             raise CustomException(e)
 
-    def calculate_cancellation_rate(self):
+    # ---------------------------------------------------------
+    # 2. Cancellation Rate per Property
+    # ---------------------------------------------------------
+    def calculate_cancellation_rate(self) -> pd.DataFrame:
+        """
+        Compute cancellation rate (%) per property_id.
+        """
         try:
-            logger.info("Calculating cancellation rate")
+            logger.info("Calculating cancellation_rate feature")
 
-            total = self.bookings.groupby("property_id")["booking_id"].count()
+            df = self.bookings.copy()
+            total = df.groupby("property_id")["booking_id"].count()
             cancelled = (
-                self.bookings[self.bookings["booking_status"] == "Cancelled"]
+                df[df["booking_status"] == "Cancelled"]
                 .groupby("property_id")["booking_id"]
                 .count()
             )
-            cancellation_rate = cancelled / total * 100
-            self.bookings["cancellation_rate"] = (
-                self.bookings["property_id"].map(cancellation_rate).fillna(0)
-            )
 
-            logger.info("Cancellation rate calculation complete")
+            rate = (cancelled / total * 100).fillna(0)
+            df["cancellation_rate"] = df["property_id"].map(rate)
 
-            return self.bookings
+            logger.info("cancellation_rate calculation complete")
+            self.bookings = df
+            return df
 
         except Exception as e:
-            logger.error(f"Cancellation rate calculation failed: {e}")
+            logger.error("Cancellation rate calculation failed")
             raise CustomException(e)
 
-    def calculate_no_show_rate(self):
+    # ---------------------------------------------------------
+    # 3. No-Show Rate per Property
+    # ---------------------------------------------------------
+    def calculate_no_show_rate(self) -> pd.DataFrame:
+        """
+        Compute no-show rate (%) per property_id.
+        """
         try:
-            logger.info("Calculating No Show rate")
+            logger.info("Calculating no_show_rate feature")
 
-            total = self.bookings.groupby("property_id")["booking_id"].count()
-            No_Show = (
-                self.bookings[self.bookings["booking_status"] == "No Show"]
+            df = self.bookings.copy()
+            total = df.groupby("property_id")["booking_id"].count()
+            no_show = (
+                df[df["booking_status"] == "No Show"]
                 .groupby("property_id")["booking_id"]
                 .count()
             )
-            no_show_rate = No_Show / total * 100
-            self.bookings["no_show_rate"] = (
-                self.bookings["property_id"].map(no_show_rate).fillna(0)
-            )
 
-            logger.info("No Show rate calculation complete")
+            rate = (no_show / total * 100).fillna(0)
+            df["no_show_rate"] = df["property_id"].map(rate)
 
-            return self.bookings
+            logger.info("no_show_rate calculation complete")
+            self.bookings = df
+            return df
 
         except Exception as e:
-            logger.error(f"No show calculation failed: {e}")
+            logger.error("No-show rate calculation failed")
             raise CustomException(e)
 
-    def calculate_platform_cancel_rate(self):
+    # ---------------------------------------------------------
+    # 4. Platform Cancellation Rate
+    # ---------------------------------------------------------
+    def calculate_platform_cancel_rate(self) -> pd.DataFrame:
+        """
+        Compute cancellation rate (%) per booking_channel.
+        """
         try:
-            logger.info("Calculating platform cancel rate")
+            logger.info("Calculating platform_cancel_rate feature")
 
-            total = self.bookings.groupby("booking_channel")["booking_id"].count()
-            platform_cancel = (
-                self.bookings[self.bookings["booking_status"] == "Cancelled"]
+            df = self.bookings.copy()
+            total = df.groupby("booking_channel")["booking_id"].count()
+            cancelled = (
+                df[df["booking_status"] == "Cancelled"]
                 .groupby("booking_channel")["booking_id"]
                 .count()
             )
-            platform_cancel_rate = platform_cancel / total * 100
-            self.bookings["platform_cancel_rate"] = (
-                self.bookings["booking_channel"].map(platform_cancel_rate).fillna(0)
-            )
 
-            logger.info("platform cancel rate calculation complete")
+            rate = (cancelled / total * 100).fillna(0)
+            df["platform_cancel_rate"] = df["booking_channel"].map(rate)
 
-            return self.bookings
+            logger.info("platform_cancel_rate calculation complete")
+            self.bookings = df
+            return df
 
         except Exception as e:
-            logger.error(f"platform cancel rate calculation failed: {e}")
+            logger.error("Platform cancel rate calculation failed")
             raise CustomException(e)
+
+    # ---------------------------------------------------------
+    # 5. Run All Feature Engineering Steps
+    # ---------------------------------------------------------
+    def run_all(self) -> pd.DataFrame:
+        """
+        Apply all feature engineering steps in sequence.
+        """
+        logger.info("Running full feature engineering pipeline")
+
+        self.calculate_lead_time()
+        self.calculate_cancellation_rate()
+        self.calculate_no_show_rate()
+        self.calculate_platform_cancel_rate()
+
+        logger.info("Feature engineering pipeline complete")
+        return self.bookings

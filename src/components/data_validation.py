@@ -48,12 +48,12 @@ class CodeValidation:
                 # Save NULL rows
                 null_rows_df.to_csv(
                     os.path.join(
-                        "artifacts", f"{os.path.basename(self.file)}.NULL.csv"
+                        "artifacts", f"{os.path.basename(self.file)}_NULL.csv"
                     ),
                     index=False,
                 )
                 logger.info(
-                    f"NULL rows saved to artifacts/{os.path.basename(self.file)}.NULL.csv"
+                    f"NULL rows saved to artifacts/{os.path.basename(self.file)}_NULL.csv"
                 )
 
                 if len(critical_nulls) > 0:
