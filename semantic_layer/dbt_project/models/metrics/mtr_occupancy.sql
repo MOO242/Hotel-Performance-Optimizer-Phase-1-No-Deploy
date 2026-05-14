@@ -26,7 +26,6 @@ f.rooms_available,
 f.room_category,
 f.property_id,
 b.total_revenue,
-f.rooms_available - f.rooms_sold,
 b.total_revenue / f.rooms_sold AS adr,
 f.rooms_sold / f.rooms_available * 100 AS occupancy_rate,
 b.total_revenue / f.rooms_available AS revpar

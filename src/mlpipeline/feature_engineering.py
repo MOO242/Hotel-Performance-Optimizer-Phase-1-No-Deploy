@@ -1,4 +1,3 @@
-from __future__ import annotations
 import pandas as pd
 from src.components.logger import logger
 from src.components.exception import CustomException

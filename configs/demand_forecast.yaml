@@ -1,0 +1,23 @@
+model:
+  name: demand_forecaster
+  target_column: rooms_sold
+
+data:
+  table: mtr_occupancy
+  date_column: check_in_date
+
+features:
+  numerical:
+  - rooms_available
+
+  nominal:
+  - room_category
+  - property_id
+
+  ordinal: {}
+
+drop_cols:
+- revpar
+- occupancy_rate
+- adr
+- total_revenue

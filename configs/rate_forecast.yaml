@@ -1,0 +1,41 @@
+model:
+  name: rate_forecaster
+  target_column: room_rate_amount
+
+data:
+  table: fct_bookings_enriched
+  date_column: check_in_date
+
+features:
+  numerical:
+  - hurdle_rate
+  - number_of_guests
+  - number_of_nights
+  - guest_rating_score
+
+  nominal:
+  - property_id
+  - city
+  - booking_channel
+  - day_type
+  - room_type
+
+  ordinal:
+    season: [ Low Season, Shoulder, High Season, Peak ]
+    room_class: [ Standard, Elite, Premium, Presidential ]
+    category: [ Economy, Luxury ]
+
+drop_cols:
+- booking_id
+- property_name
+- check_in_date
+- checkout_date
+- booking_date
+- revenue_booked_amount
+- revenue_realized
+- booking_status
+
+split:
+  type: time_based
+  train_end: 2022-06-21
+  val_end: 2022-07-08

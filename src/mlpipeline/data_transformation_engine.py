@@ -1,63 +1,64 @@
 import os
+import yaml
 import pickle
-import pandas as pd
+import argparse
 import numpy as np
+import pandas as pd
 from dataclasses import dataclass
-from scipy import sparse
 from src.components.logger import logger
 from src.components.exception import CustomException
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
+from src.components.data_ingestion import DataLoader, engine
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
 
 
 @dataclass
 class FeaturePreprocessorConfig:
-    preprocessor_obj_file_path: str = os.path.join("artifacts", "preprocessor.pkl")
+    table_name: str
+    date_column: str
+    config_path: str
 
 
 class FeaturePreprocessor:
 
-    def __init__(
-        self,
-        date_column,
-    ):
-        self.date_column = date_column
-        self.config = FeaturePreprocessorConfig()
-        self.preprocessor_path = os.path.join(
-            "artifacts", date_column, "preprocessor.pkl"
+    def __init__(self, config: FeaturePreprocessorConfig):
+        self.config = config
+
+        self.output_dir = os.path.join(
+            "artifacts",
+            self.config.table_name,
+            self.config.date_column,
+            "preprocessor.pkl",
         )
-        os.makedirs(os.path.dirname(self.preprocessor_path), exist_ok=True)
+
+        os.makedirs(os.path.dirname(self.output_dir), exist_ok=True)
+
+    def load_schema(self):
+        """Helper to load the YAML file."""
+        with open(self.config.config_path, "r") as f:
+
+            return yaml.safe_load(f)
 
     def get_preprocessor(self):
 
         try:
 
             logger.info("pre-processing start")
-            numerical_columns = [
-                "hurdle_rate",
-                "number_of_guests",
-                "guest_rating_score",
-                "number_of_nights",
-            ]
-            nominal_columns = [
-                "city",
-                "day_type",
-                "room_type",
-                "property_id",
-                "booking_channel",
-            ]
-
-            ordinal_columns = ["season", "room_class", "category"]
+            schema = self.load_schema()
+            cols = schema["features"]
+            numerical_columns = cols["numerical"]
+            nominal_columns = cols["nominal"]
+            ordinal_dict = cols.get("ordinal", {})
+            if ordinal_dict:
+                ordinal_columns = list(cols["ordinal"].keys())
+                ordinal_categories = [cols["ordinal"][col] for col in ordinal_columns]
+            else:
+                ordinal_columns = []
+                ordinal_categories = []
 
             # ─── 2. Define ordinal order (lowest → highest) ───
-
-            ordinal_categories = [
-                ["Low Season", "Shoulder", "High Season", "Peak"],  # season
-                ["Standard", "Elite", "Premium", "Presidential"],  # room_class
-                ["Economy", "Luxury"],  # category
-            ]
 
             num_pipeline = Pipeline(
                 steps=[
@@ -116,27 +117,17 @@ class FeaturePreprocessor:
             for df in [train_df, val_df, test_df]:
                 df["property_id"] = df["property_id"].astype(str)
 
-            drop_cols = [
-                "booking_id",  # ID
-                "property_name",  # Cardinality risk
-                "check_in_date",  # Date (split column)
-                "checkout_date",  # Date (derivable)
-                "booking_date",  # Date
-                "room_rate_amount",  # TARGET → becomes y
-                "revenue_booked_amount",  # LEAKAGE
-                "revenue_realized",  # LEAKAGE
-                "booking_status",  # OUTCOME leakage
-            ]
+            schema = self.load_schema()
+            drop_cols = schema["drop_cols"]
+            target_col = schema["model"]["target_column"]
 
-            target_col = "room_rate_amount"
-
-            X_train = train_df.drop(columns=drop_cols)
+            X_train = train_df.drop(columns=drop_cols, errors="ignore")
             y_train = train_df[target_col]
 
-            X_val = val_df.drop(columns=drop_cols)
+            X_val = val_df.drop(columns=drop_cols, errors="ignore")
             y_val = val_df[target_col]
 
-            X_test = test_df.drop(columns=drop_cols)
+            X_test = test_df.drop(columns=drop_cols, errors="ignore")
             y_test = test_df[target_col]
 
             preprocessor = self.get_preprocessor()
@@ -157,15 +148,15 @@ class FeaturePreprocessor:
             val_arr = np.c_[X_val_arr, np.array(y_val)]
             test_arr = np.c_[X_test_arr, np.array(y_test)]
 
-            with open(self.preprocessor_path, "wb") as f:
+            with open(self.output_dir, "wb") as f:
                 pickle.dump(preprocessor, f)
 
             logger.info(f"Train shape: {train_arr.shape}")
             logger.info(f"Val shape:   {val_arr.shape}")
             logger.info(f"Test shape:  {test_arr.shape}")
-            logger.info(f"Preprocessor saved to: {self.preprocessor_path}")
+            logger.info(f"Preprocessor saved to: {self.output_dir}")
 
-            return train_arr, val_arr, test_arr, self.preprocessor_path
+            return train_arr, val_arr, test_arr, self.output_dir
 
         except Exception as e:
             logger.error(f"Feature preprocessing failed: {e}")
@@ -176,17 +167,38 @@ class FeaturePreprocessor:
 if __name__ == "__main__":
 
     logger.info("Starting preprocessing pipeline")
+    # Integration of Argument Parser
+    parser = argparse.ArgumentParser(description="Hotel Forecast Model Trainer CLI")
+    parser.add_argument(
+        "--config",
+        required=True,
+        help="Path to YAML config",
+    )
+    args = parser.parse_args()
 
     # Define your date column folder (example: "check_in_date")
-    date_column = "check_in_date"
+    loader = DataLoader(engine)
 
-    # Instantiate preprocessor
-    preprocessor = FeaturePreprocessor(date_column)
+    # Rate transformation
+    active_config = FeaturePreprocessorConfig(
+        date_column="check_in_date",
+        table_name="fct_bookings_enriched",
+        config_path=args.config,
+    )
+
+    preprocessor = FeaturePreprocessor(active_config)
 
     # File paths
-    train_path = os.path.join("artifacts", date_column, "train.csv")
-    val_path = os.path.join("artifacts", date_column, "val.csv")
-    test_path = os.path.join("artifacts", date_column, "test.csv")
+
+    train_path = os.path.join(
+        "artifacts", active_config.table_name, active_config.date_column, "train.csv"
+    )
+    val_path = os.path.join(
+        "artifacts", active_config.table_name, active_config.date_column, "val.csv"
+    )
+    test_path = os.path.join(
+        "artifacts", active_config.table_name, active_config.date_column, "test.csv"
+    )
 
     # Run transformation
     train_arr, val_arr, test_arr, preprocessor_path = preprocessor.transform_bookings(
@@ -194,3 +206,12 @@ if __name__ == "__main__":
     )
 
     logger.info("Preprocessing pipeline completed successfully")
+
+    # Load the artifact to check
+    with open(preprocessor_path, "rb") as f:
+        preprocessor = pickle.load(f)
+
+    print(f"Preprocessor type: {type(preprocessor).__name__}")
+    print(f"Number of transformers: {len(preprocessor.transformers_)}")
+    print(f"Feature names (first 10): {preprocessor.get_feature_names_out()[:10]}")
+    print(f"Total features: {len(preprocessor.get_feature_names_out())}")

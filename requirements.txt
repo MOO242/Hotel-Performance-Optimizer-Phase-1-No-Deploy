@@ -7,4 +7,5 @@ logging
 python-dotenv
 streamlit
 category_encoders
+xgboost
 os

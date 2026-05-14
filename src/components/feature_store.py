@@ -15,7 +15,7 @@ Workflow:
 
 import pandas as pd
 from src.components.data_ingestion import DataLoader, engine
-from src.forecasting.feature_engineering import FeatureEngineering
+from src.mlpipeline.feature_engineering import FeatureEngineering
 from src.components.logger import logger
 from src.components.exception import CustomException
 
