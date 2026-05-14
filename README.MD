@@ -1,11 +1,10 @@
 # 🏨 Hotel Performance Optimizer  
 
-A production‑grade analytics and decision‑intelligence system for hotel revenue management, built on a modern data & ML architecture that progresses from **data ingestion → validation → semantic modeling → diagnostic analytics → forecasting → prescriptive decision support**.
+A production-grade analytics and decision-intelligence system for hotel revenue management, built on a modern data & ML architecture that progresses from **data ingestion → validation → semantic modeling → diagnostic analytics → forecasting → prescriptive decision support**.
 
 ---
 
 ## 📐 Architecture Overview  
-*(Fully updated to match your diagram)*
 
 ```
 Extract, Load, Transform (ELT)
@@ -33,10 +32,10 @@ Forecasting (Demand & Price)
    ├── ADR Forecast
    ├── Occupancy Forecast
    ├── Derived RevPAR
-   ├── Time‑Series Backtesting
+   ├── Time-Series Backtesting
    └── Model Evaluation (MAPE, RMSE)
         ↓
-What‑If Analysis & Business Logic
+What-If Analysis & Business Logic
    ├── Price recommendations
    ├── Revenue decision rules
    ├── Model serving (FastAPI)
@@ -54,6 +53,38 @@ Orchestration & MLOps
 
 ---
 
+## 🎯 Model Results
+
+### Rate Forecaster (RPO)
+Predicts `room_rate_amount` from booking attributes. Trained on 81,989 bookings (60%) / validated on 26,691 (20%) / tested on 25,910 (20%) using a time-based split on `check_in_date`.
+
+| Model | Val MAE | Val MAPE | Test R² |
+|-------|---------|----------|---------|
+| Linear Regression | 3,244 | 74.8% | — |
+| **Random Forest** ⭐ | **1,792** | **32.0%** | **0.80** |
+| XGBoost | 1,848 | 32.7% | — |
+
+**Test Results:** MAE = ₹1,780 | RMSE = ₹3,035 | R² = 0.80 | MAPE = 31.8%
+
+### Demand Forecaster
+Predicts `rooms_sold` per hotel-date.
+
+| Model | Val MAE | Val MAPE | Test R² |
+|-------|---------|----------|---------|
+| Linear Regression | 2.45 | 16.7% | — |
+| Random Forest | 2.30 | 13.9% | — |
+| **XGBoost** ⭐ | **2.30** | **13.9%** | **0.76** |
+
+**Test Results:** MAE = 2.74 rooms | RMSE = 3.44 | R² = 0.76 | MAPE = 22.3%
+
+---
+
+## 📊 Dataset Note
+
+This project uses the **AtliQ Grands dataset** — a synthetic dataset designed for hospitality analytics learning. Values are illustrative, not real-market pricing. The engineering patterns demonstrated here are production-ready and applicable to real hotel data.
+
+---
+
 # 📊 KPI Framework  
 
 This project follows a structured **analytics maturity model**, with KPIs organized into **10 logical layers** that move from *what happened* → *why it happened* → *what will happen* → *what should we do*.
@@ -61,7 +92,7 @@ This project follows a structured **analytics maturity model**, with KPIs organi
 ---
 
 ## **Layer 1 — Outcome KPIs (What happened)**  
-Executive‑level results. All diagnostics explain movement in these metrics.
+Executive-level results. All diagnostics explain movement in these metrics.
 
 | KPI             | Definition                                   |
 | --------------- | -------------------------------------------- |
@@ -88,7 +119,7 @@ Foundational decomposition.
 ## **Layer 3 — Demand & Booking Health KPIs**
 
 - Gross & Net Bookings  
-- Cancellation Rate, No‑Show Rate  
+- Cancellation Rate, No-Show Rate  
 - Booking Lead Time  
 - Length of Stay (LOS)  
 - Pickup (Daily / Weekly)  
@@ -116,11 +147,11 @@ For each segment (Transient, Group, Contract, Wholesale):
 
 ---
 
-## **Layer 6 — Time‑Based Comparison KPIs**
+## **Layer 6 — Time-Based Comparison KPIs**
 
 - YoY, MoM, WoW % change  
 - YTD performance  
-- Rolling 7 / 14 / 30‑day trends  
+- Rolling 7 / 14 / 30-day trends  
 - Seasonality Index  
 
 ---
@@ -128,16 +159,16 @@ For each segment (Transient, Group, Contract, Wholesale):
 ## **Layer 7 — Distribution & Inventory Health**
 
 - Availability %  
-- Out‑of‑Order Rooms  
-- Sell‑Out Days  
+- Out-of-Order Rooms  
+- Sell-Out Days  
 - Compression Nights  
-- Wash % (Cancellations + No‑Shows)  
+- Wash % (Cancellations + No-Shows)  
 
 ---
 
-## **Layer 8 — Forecast & Forward‑Looking KPIs**
+## **Layer 8 — Forecast & Forward-Looking KPIs**
 
-- On‑The‑Books (OTB) Revenue & ADR  
+- On-The-Books (OTB) Revenue & ADR  
 - Forecast Occupancy & RevPAR  
 - Pickup Forecast  
 - Forecast Accuracy (MAPE, Error %)  
@@ -166,66 +197,52 @@ For each segment (Transient, Group, Contract, Wholesale):
 
 # 🗂️ Project Structure  
 
-
 ```
 hotel_performance_optimizer/
 │
-├── airflow/                         # DAGs for ingestion, training, scoring
-├── artifacts/                       # Saved models, scalers, backtests
-├── mlops/                           # MLflow configs, model registry logic
+├── artifacts/                              # Outputs organized by data source
+│   ├── fct_bookings_enriched/
+│   │   └── check_in_date/
+│   │       ├── train.csv, val.csv, test.csv
+│   │       ├── preprocessor.pkl
+│   │       ├── model.pkl
+│   │       └── metrics.json
+│   └── mtr_occupancy/                      # Demand data artifacts
+│       └── <date_column>/
+│           └── (same structure)
 │
 ├── src/
-│   ├── components/
-│   │   ├── data_ingestion.py
-│   │   ├── data_validation.py
-│   │   ├── feature_store.py
-│   │   └── kpi_engine.py
+│   ├── components/                         # SHARED infrastructure (imported)
+│   │   ├── logger.py
+│   │   ├── exception.py
+│   │   └── data_ingestion.py               # DataLoader + PostgreSQL engine
 │   │
-│   ├── forecasting/
-│   │   ├── feature_engineering.py
-│   │   ├── demand_forecast.py
-│   │   ├── adr_forecast.py
-│   │   ├── revpar_forecast.py
-│   │   └── model_utils.py
-│   │
-│   ├── pipelines/
-│   │   ├── train_pipeline.py
-│   │   ├── predict_pipeline.py
-│   │   └── evaluate_pipeline.py
-│   │
-│   └── streamlit_app/
-│       ├── main.py
-│       └── pages/
-│           ├── revenue_dashboard.py
-│           ├── forecast_view.py
-│           ├── backtest_results.py
-│           └── what_if_analysis.py
+│   └── mlpipeline/                         # EXECUTABLE pipelines (python -m)
+│       ├── data_splitter.py                # Generic: time-based train/val/test split
+│       ├── data_transformation.py          # Generic: sklearn preprocessing
+│       ├── rate_forecast.py                # RPO trainer (room rate prediction)
+│       └── demand_forecast.py              # Demand trainer (rooms sold prediction)
 │
+├── dbt_project/                            # Semantic layer
 ├── notebooks/
-│   └── eda.ipynb
-│
 ├── tests/
-│   ├── test_feature_generation.py
-│   ├── test_forecast_sanity.py
-│   └── test_kpi_definitions.py
-│
-├── Roadmap.drawio
-├── Roadmap.jpg
-├── Diagnostic_Analytics.md
-├── Predictive_Analytics.md
-├── Prescriptive_Analytics.md
-├── .env
+├── .env.example
 ├── .gitignore
-├── exception.py
-├── logger.py
 ├── requirements.txt
 └── README.md
 ```
 
+### Design Principles
+
+- **components/** = shared utilities imported across pipelines
+- **mlpipeline/** = scripts run via `python -m`, never imported elsewhere
+- **Generic splitter + preprocessor** serve any table via `table_name` + `date_column` params
+- **Specialized trainers** per model type for business-specific evaluation
+- **Artifacts organized by data source** for clean multi-model separation
+
 ---
 
 # 🛠️ Tech Stack  
-*(Updated to match the architecture diagram)*
 
 | Layer                    | Technology                                  |
 | ------------------------ | ------------------------------------------- |
@@ -234,7 +251,7 @@ hotel_performance_optimizer/
 | Semantic Layer           | dbt                                          |
 | Data Validation          | Python, Pandas                              |
 | Feature Store            | Python, SQL                                 |
-| Machine Learning         | Scikit‑learn, MLflow                        |
+| Machine Learning         | Scikit-learn, XGBoost, MLflow               |
 | Orchestration            | Apache Airflow                              |
 | KPI Engine               | Python + SQL                                |
 | API Layer                | FastAPI                                     |
@@ -245,62 +262,80 @@ hotel_performance_optimizer/
 
 ---
 
-# 📌 Roadmap  
-*(Clean, aligned with architecture)*
+# 📌 Roadmap
 
-- [x] Architecture design  
-- [x] Data ingestion layer  
-- [x] Data validation & feature store  
-- [x] Semantic layer (dbt)  
-- [x] KPI engine  
-- [x] Diagnostic analytics  
-- [ ] ADR forecasting model  
-- [ ] Occupancy forecasting model  
-- [ ] RevPAR derived forecast  
-- [ ] Backtesting engine  
-- [ ] MLflow experiment tracking  
-- [ ] MLflow model registry  
-- [ ] Airflow DAGs  
-- [ ] Streamlit dashboards  
-- [ ] FastAPI deployment  
-- [ ] Power BI / Tableau dashboards  
+### ✅ Shipped (Phase 1)
+- [x] Architecture design
+- [x] Data ingestion layer (PostgreSQL + dbt)
+- [x] Data validation & feature store
+- [x] Semantic layer (dbt: `fct_bookings_enriched`, `mtr_occupancy`)
+- [x] KPI engine
+- [x] Diagnostic analytics
+- [x] Time-based train/val/test splitter (60/20/20)
+- [x] sklearn preprocessing pipeline (generic engine)
+- [x] **Rate Forecaster (RPO)** — Random Forest, Test R² = 0.80
+- [x] **Demand Forecaster** — XGBoost, Test R² = 0.76
+
+### 🚧 In Progress (Phase 2)
+- [ ] `lead_time` feature engineering
+- [ ] MLflow experiment tracking
+- [ ] Hyperparameter tuning (GridSearchCV)
+- [ ] TimeSeriesSplit cross-validation
+
+### 📋 Planned (Phase 3)
+- [ ] ADR + RevPAR derived forecasts
+- [ ] Backtesting engine
+- [ ] FastAPI serving endpoints
+- [ ] Streamlit dashboards (hotelier UI)
+- [ ] Airflow DAGs
+- [ ] Power BI / Tableau dashboards
+- [ ] Docker containerization
+- [ ] Tests directory (pytest)
 
 ---
-## Setup
+
+## 🚀 Running the Pipeline
 
 ### Prerequisites
 - Python 3.12+
-- PostgreSQL with `fct_bookings_enriched` table loaded
+- PostgreSQL with AtliQ Grands data loaded
+- dbt models materialized (`fct_bookings_enriched`, `mtr_occupancy`)
 
 ### Installation
-
 ```bash
-# Clone the repo
-git clone https://github.com/MOO242/hotel-performance-optimizer.git
-cd hotel-performance-optimizer
+git clone https://github.com/MOO242/Hotel-Performance-Optimizer.git
+cd Hotel-Performance-Optimizer
 
-# Create virtual environment
 python -m venv env
-source env/bin/activate  # Linux/Mac
-# OR
-.\env\Scripts\activate   # Windows
+.\env\Scripts\activate         # Windows
+# source env/bin/activate      # Linux/Mac
 
-# Install dependencies
 pip install -r requirements.txt
-
-# Configure environment
 cp .env.example .env
-# Edit .env with your database credentials
-
-# Run the pipeline
-python -m src.components.data_splitter
+# Edit .env with PostgreSQL credentials
 ```
 
-### License
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+### Execution
+```bash
+# Step 1: Time-based train/val/test split
+python -m src.mlpipeline.data_splitter
+
+# Step 2: Feature preprocessing (sklearn pipeline)
+python -m src.mlpipeline.data_transformation
+
+# Step 3: Train models (choose one)
+python -m src.mlpipeline.rate_forecast      # Rate Forecaster (RPO)
+python -m src.mlpipeline.demand_forecast    # Demand Forecaster
+```
 
 ---
-## 🖼️  Roadmap Diagram  
+
+## 📜 License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+## 🖼️ Architecture Diagram  
 
 ![Hotel Performance Optimizer Architecture](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Project_architecture.png)
----
