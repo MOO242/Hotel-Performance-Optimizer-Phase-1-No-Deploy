@@ -149,7 +149,6 @@ if __name__ == "__main__":
     try:
 
         logger.info("Starting demand forecasting pipeline...")
-        
 
         # Model forecast
         active_config = FeaturePreprocessorConfig(

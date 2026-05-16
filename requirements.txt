@@ -2,10 +2,15 @@ pandas
 numpy
 matplotlib
 seaborn
-sqlalchemy psycopg2-binary
-logging
+sqlalchemy
+psycopg2-binary
 python-dotenv
 streamlit
+requests
 category_encoders
-xgboost
-os
+xgboost==2.0.3
+fastapi
+uvicorn[standard]
+pydantic
+joblib
+scikit-learn

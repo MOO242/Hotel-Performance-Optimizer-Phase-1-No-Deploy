@@ -1,0 +1,35 @@
+🏨 Built a hotel rate predictor for revenue teams.
+
+Three weeks. Fully containerized. Open source.
+
+What you see:
+   → Booking attributes in → predicted rate out
+   → ₹9,750 prediction with ±₹500 confidence range
+   → Range based on the model's actual MAE on test data
+   → Prediction history + trend visualization
+   → Built for revenue managers, not data scientists
+
+The stack:
+   🐳 Docker Compose (multi-container)
+   ⚡ FastAPI (model serving)
+   📊 Streamlit (UI)
+   🌲 Random Forest + XGBoost (two trained models)
+   📐 YAML config-driven preprocessing engine
+
+The architectural decision that mattered:
+
+I built ONE generic preprocessing engine that reads YAML configs,
+not separate code per model. Adding a third forecast type
+(occupancy, RevPAR, etc.) is now a config file — not a refactor.
+
+The transparency I'm most proud of:
+The UI shows the model's MAE (±₹500) right next to the prediction.
+Revenue managers shouldn't pretend ML is magic. They need to know
+the error bars so they can make defensible pricing decisions.
+
+Built on AtliQ Grands synthetic data — patterns translate directly
+to real hotel chains.
+
+Next: HuggingFace Spaces deployment so anyone can try it live.
+
+#HospitalityAnalytics #MLOps #RevenueManagement #BuildInPublic
