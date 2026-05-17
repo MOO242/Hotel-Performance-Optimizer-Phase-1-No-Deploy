@@ -1,233 +1,192 @@
-# 🏨 Hotel Performance Optimizer  
+# 🏨 Hotel Performance Optimizer
 
-A production-grade analytics and decision-intelligence system for hotel revenue management, built on a modern data & ML architecture that progresses from **data ingestion → validation → semantic modeling → diagnostic analytics → forecasting → prescriptive decision support**.
+A production-grade hospitality ML system that predicts hotel rates and demand, exposes them via a FastAPI service, and lets revenue managers explore pricing scenarios through an interactive Streamlit dashboard — all containerized with Docker and deployed publicly on HuggingFace Spaces.
+
+🔗 **Live Demo:** [huggingface.co/spaces/MoAlrazek/HotelPerformanceOptimizer](https://huggingface.co/spaces/MoAlrazek/HotelPerformanceOptimizer)
+
+📂 **Repository:** [github.com/MOO242/Hotel-Performance-Optimizer](https://github.com/MOO242/Hotel-Performance-Optimizer)
 
 ---
 
-## 📐 Architecture Overview  
+## 🎯 What This Project Does
+
+Built end-to-end across 3 weeks: ingests booking data, models it through a dbt semantic layer, trains two ML forecasters (rates + demand), and serves predictions through a containerized FastAPI/Streamlit stack with business guardrails and a public deployment.
+
+The system answers two questions hoteliers actually ask:
+1. **What rate should I charge** for a given property, room class, season, and channel?
+2. **How many rooms will sell** at a given price, and what's the revenue-optimal price point?
+
+---
+
+## 📐 Architecture (Phase 1+2 Shipped)
 
 ```
-Extract, Load, Transform (ELT)
-   ├── API / Web Scraping / CSV
-   └── SQL Databases (PostgreSQL / Snowflake / SQL Server)
-        ↓
-Feature Store & Data Validation
-   ├── Schema checks
-   ├── Missing/outlier detection
-   └── Valid?
-        ├── No → Reject / Fix before ingestion
-        └── Yes → Continue
-        ↓
-Semantic Layer (dbt)
-   ├── KPI definitions
-   ├── Metric logic
-   └── Data modeling (Fact & Dim tables)
-        ↓
-Data Model
-   ├── EDA & Descriptive Analysis (Python + SQL)
-   ├── KPI Engine (Python package)
-   └── Root Cause Analysis
-        ↓
-Forecasting (Demand & Price)
-   ├── ADR Forecast
-   ├── Occupancy Forecast
-   ├── Derived RevPAR
-   ├── Time-Series Backtesting
-   └── Model Evaluation (MAPE, RMSE)
-        ↓
-What-If Analysis & Business Logic
-   ├── Price recommendations
-   ├── Revenue decision rules
-   ├── Model serving (FastAPI)
-   └── Streamlit interactive apps
-        ↓
-Decision & Prescriptive Analytics
-   ├── Prescriptive Action Engine
-   └── BI Dashboards (Power BI / Tableau)
-        ↓
-Orchestration & MLOps
-   ├── Airflow DAGs (ingestion → features → training → scoring)
-   ├── MLflow Tracking & Model Registry
-   └── Artifact store (models, scalers, backtests)
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 1 — DATA SOURCE                                      │
+│  AtliQ Grands CSV (synthetic, 134,590 bookings)            │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 2 — DATA WAREHOUSE                                   │
+│  PostgreSQL (raw + staged tables)                          │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 3 — SEMANTIC LAYER (dbt)                             │
+│  - fct_bookings_enriched (booking grain)                   │
+│  - mtr_occupancy (date grain)                               │
+│  - 10-Layer KPI Framework                                   │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 4 — PRE-ML PIPELINE                                  │
+│  Feature engineering → YAML config-driven preprocessor      │
+│  → preprocessor.pkl                                         │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 5 — ML MODELS                                        │
+│  - Rate Forecaster (Random Forest, R²=0.80, MAE=±₹1,780)   │
+│  - Demand Forecaster (XGBoost, R²=0.76, MAE=2.74 rooms)    │
+│  → model.pkl                                                │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 6 — EXPERIMENT TRACKING                              │
+│  MLflow (run logs, metric history)                          │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 7 — SERVING & UI                                     │
+│  FastAPI service (POST /predict_rate, /predict_demand)     │
+│   - 3-layer business guardrails                             │
+│  Streamlit dashboard (Whatiftool + Demand + Rate pages)    │
+│   - 9-point demand curve with revenue optimization          │
+│   - Confidence ranges using actual model MAE               │
+│   - Hurdle rate disclosure                                  │
+└────────────────────────┬────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 8 — DEPLOYMENT                                       │
+│  Docker Compose (local) → HuggingFace Spaces (public)      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🎯 Model Results
 
-### Rate Forecaster (RPO)
-Predicts `room_rate_amount` from booking attributes. Trained on 81,989 bookings (60%) / validated on 26,691 (20%) / tested on 25,910 (20%) using a time-based split on `check_in_date`.
+### Rate Forecaster (Room Rate Prediction)
+Predicts `room_rate_amount` from booking attributes. Trained on 81,989 bookings / validated on 26,691 / tested on 25,910 using a time-based split on `check_in_date`.
 
-| Model | Val MAE | Val MAPE | Test R² |
-|-------|---------|----------|---------|
-| Linear Regression | 3,244 | 74.8% | — |
+| Model              | Val MAE | Val MAPE | Test R² |
+|--------------------|---------|----------|---------|
+| Linear Regression  | 3,244   | 74.8%    | —       |
 | **Random Forest** ⭐ | **1,792** | **32.0%** | **0.80** |
-| XGBoost | 1,848 | 32.7% | — |
+| XGBoost            | 1,848   | 32.7%    | —       |
 
-**Test Results:** MAE = ₹1,780 | RMSE = ₹3,035 | R² = 0.80 | MAPE = 31.8%
+**Test Performance:** MAE = ₹1,780 | RMSE = ₹3,035 | R² = 0.80 | MAPE = 31.8%
 
-### Demand Forecaster
+### Demand Forecaster (Rooms Sold Prediction)
 Predicts `rooms_sold` per hotel-date.
 
-| Model | Val MAE | Val MAPE | Test R² |
-|-------|---------|----------|---------|
-| Linear Regression | 2.45 | 16.7% | — |
-| Random Forest | 2.30 | 13.9% | — |
-| **XGBoost** ⭐ | **2.30** | **13.9%** | **0.76** |
+| Model              | Val MAE | Val MAPE | Test R² |
+|--------------------|---------|----------|---------|
+| Linear Regression  | 2.45    | 16.7%    | —       |
+| Random Forest      | 2.30    | 13.9%    | —       |
+| **XGBoost** ⭐      | **2.30** | **13.9%** | **0.76** |
 
-**Test Results:** MAE = 2.74 rooms | RMSE = 3.44 | R² = 0.76 | MAPE = 22.3%
+**Test Performance:** MAE = 2.74 rooms | RMSE = 3.44 | R² = 0.76 | MAPE = 22.3%
+
+---
+
+## 🛡️ Business Guardrails (Production Design)
+
+Statistical accuracy isn't business correctness. The demand model originally predicted **222% occupancy** for tiny hotels and **−12.59 rooms sold** for out-of-distribution inputs — both mathematically explainable, both physically impossible.
+
+Three layers of defense were added:
+
+1. **API-level clamping** — `rooms_sold ∈ [0, rooms_available]`, with warning logs when guardrails fire
+2. **UI transparency** — disclose to users when predictions were clamped (no silent corrections)
+3. **Schema validation** — Pydantic bounds (`rooms_available ≥ 20`) reject unrealistic inputs upstream
+
+Plus: every prediction in the UI displays the model's MAE next to it (±₹1,780 for rates, ±2.74 rooms for demand). Revenue managers should never pretend ML is magic — they need error bars to make defensible pricing decisions.
 
 ---
 
 ## 📊 Dataset Note
 
-This project uses the **AtliQ Grands dataset** — a synthetic dataset designed for hospitality analytics learning. Values are illustrative, not real-market pricing. The engineering patterns demonstrated here are production-ready and applicable to real hotel data.
+This project uses the **AtliQ Grands dataset** — synthetic hospitality data designed for analytics learning. Values are illustrative, not real-market pricing. The engineering patterns are production-ready and apply directly to real hotel chains.
 
 ---
 
-# 📊 KPI Framework  
+## 📊 KPI Framework
 
-This project follows a structured **analytics maturity model**, with KPIs organized into **10 logical layers** that move from *what happened* → *why it happened* → *what will happen* → *what should we do*.
+The project follows a 10-layer analytics maturity model that progresses from *what happened* → *why* → *what will happen* → *what should we do*.
 
----
-
-## **Layer 1 — Outcome KPIs (What happened)**  
-Executive-level results. All diagnostics explain movement in these metrics.
-
-| KPI             | Definition                                   |
-| --------------- | -------------------------------------------- |
-| Room Revenue    | Total revenue from room sales                |
-| RevPAR          | Revenue per Available Room                   |
-| ADR             | Average Daily Rate                           |
-| Occupancy %     | Rooms Sold ÷ Rooms Available                 |
-| Rooms Sold      | Total occupied rooms                         |
-| Rooms Available | Total inventory available                    |
-
----
-
-## **Layer 2 — Primary Driver KPIs (Why it happened)**  
-Foundational decomposition.
-
-- ADR vs Occupancy impact  
-- Revenue = ADR × Rooms Sold  
-- RevPAR = ADR × Occupancy  
-
-**Rule:** Every RevPAR movement must be explained through **ADR vs Occupancy**.
+| Layer | Focus | Example KPIs |
+|-------|-------|--------------|
+| 1 | Outcome KPIs | RevPAR, ADR, Occupancy %, Room Revenue |
+| 2 | Primary Drivers | ADR × Occupancy decomposition |
+| 3 | Demand & Booking Health | Lead Time, LOS, Pickup, Cancellation Rate |
+| 4 | Segment Performance | Segment mix, Revenue contribution, ADR premium |
+| 5 | Channel & Source | Channel mix, Net ADR, OTA dependency |
+| 6 | Time Comparisons | YoY, MoM, WoW, Rolling trends, Seasonality |
+| 7 | Distribution & Inventory | Availability %, Sell-out days, Compression nights |
+| 8 | Forecast & Forward-Looking | OTB Revenue, Forecast accuracy (MAPE) |
+| 9 | Commercial Strategy | ADR Opportunity, Price Elasticity, Displacement |
+| 10 | Data Quality & Governance | Completeness, Reconciliation, Outlier flags |
 
 ---
 
-## **Layer 3 — Demand & Booking Health KPIs**
-
-- Gross & Net Bookings  
-- Cancellation Rate, No-Show Rate  
-- Booking Lead Time  
-- Length of Stay (LOS)  
-- Pickup (Daily / Weekly)  
-- Pace vs LY & Budget  
-
----
-
-## **Layer 4 — Segment Performance KPIs**
-
-For each segment (Transient, Group, Contract, Wholesale):
-
-- Revenue, Rooms Sold, ADR, RevPAR  
-- Segment Mix %, Revenue Contribution %  
-- ADR Premium / Discount vs Total  
-
----
-
-## **Layer 5 — Channel & Source KPIs**
-
-- Channel Mix % (Direct, OTA, GDS, Voice)  
-- ADR by Channel  
-- Net ADR (after commissions)  
-- OTA Dependency %  
-- Cost of Sale %  
-
----
-
-## **Layer 6 — Time-Based Comparison KPIs**
-
-- YoY, MoM, WoW % change  
-- YTD performance  
-- Rolling 7 / 14 / 30-day trends  
-- Seasonality Index  
-
----
-
-## **Layer 7 — Distribution & Inventory Health**
-
-- Availability %  
-- Out-of-Order Rooms  
-- Sell-Out Days  
-- Compression Nights  
-- Wash % (Cancellations + No-Shows)  
-
----
-
-## **Layer 8 — Forecast & Forward-Looking KPIs**
-
-- On-The-Books (OTB) Revenue & ADR  
-- Forecast Occupancy & RevPAR  
-- Pickup Forecast  
-- Forecast Accuracy (MAPE, Error %)  
-- Budget Variance  
-
----
-
-## **Layer 9 — Commercial Strategy KPIs (Advanced)**
-
-- ADR Opportunity Index  
-- Price Elasticity  
-- Displacement Analysis (Group)  
-- BAR vs Achieved ADR  
-- Loyalty Revenue %, Repeat Guest %  
-
----
-
-## **Layer 10 — Data Quality & Governance KPIs**
-
-- Data Completeness %  
-- Missing ADR / Revenue counts  
-- Outlier detection flags  
-- KPI reconciliation checks  
-
----
-
-# 🗂️ Project Structure  
+## 🗂️ Project Structure
 
 ```
 hotel_performance_optimizer/
 │
-├── artifacts/                              # Outputs organized by data source
+├── artifacts/                              # Trained models + transformers
 │   ├── fct_bookings_enriched/
 │   │   └── check_in_date/
 │   │       ├── train.csv, val.csv, test.csv
 │   │       ├── preprocessor.pkl
 │   │       ├── model.pkl
 │   │       └── metrics.json
-│   └── mtr_occupancy/                      # Demand data artifacts
-│       └── <date_column>/
+│   └── mtr_occupancy/
+│       └── check_in_date/
 │           └── (same structure)
 │
+├── configs/                                # YAML configs (one per model)
+│   ├── rate_forecast.yaml
+│   └── demand_forecast.yaml
+│
 ├── src/
-│   ├── components/                         # SHARED infrastructure (imported)
+│   ├── components/                         # SHARED utilities (imported)
 │   │   ├── logger.py
 │   │   ├── exception.py
-│   │   └── data_ingestion.py               # DataLoader + PostgreSQL engine
+│   │   └── data_ingestion.py
 │   │
-│   └── mlpipeline/                         # EXECUTABLE pipelines (python -m)
-│       ├── data_splitter.py                # Generic: time-based train/val/test split
-│       ├── data_transformation.py          # Generic: sklearn preprocessing
-│       ├── rate_forecast.py                # RPO trainer (room rate prediction)
-│       └── demand_forecast.py              # Demand trainer (rooms sold prediction)
+│   ├── mlpipeline/                         # EXECUTABLE pipelines
+│   │   ├── data_splitter.py
+│   │   ├── data_transformation_engine.py   # YAML config-driven
+│   │   ├── rate_forecast.py
+│   │   └── demand_forecast.py
+│   │
+│   └── api/                                # FastAPI service
+│       ├── schemas.py                      # Pydantic models
+│       ├── model_loader.py                 # Loads pickles once at startup
+│       └── serve.py                        # FastAPI app + endpoints
+│
+├── streamlit_app/                          # Streamlit UI
+│   ├── whatiftool.py                       # Landing page (v1.0)
+│   └── pages/
+│       ├── Demand.py                       # Demand predictor + curve
+│       └── Rate.py                         # Rate predictor + confidence band
 │
 ├── dbt_project/                            # Semantic layer
-├── notebooks/
-├── tests/
-├── .env.example
-├── .gitignore
+├── notebooks/                              # EDA + experiments
+├── Dockerfile                              # FastAPI container
+├── Dockerfile.streamlit                    # Streamlit container
+├── docker-compose.yml                      # Multi-container orchestration
 ├── requirements.txt
 └── README.md
 ```
@@ -236,72 +195,77 @@ hotel_performance_optimizer/
 
 - **components/** = shared utilities imported across pipelines
 - **mlpipeline/** = scripts run via `python -m`, never imported elsewhere
-- **Generic splitter + preprocessor** serve any table via `table_name` + `date_column` params
-- **Specialized trainers** per model type for business-specific evaluation
-- **Artifacts organized by data source** for clean multi-model separation
+- **api/** = FastAPI service that loads pickled artifacts and serves predictions
+- **streamlit_app/** = revenue manager UI calling the FastAPI service internally
+- **YAML config-driven preprocessing** — adding a new forecast = a config file, not a refactor
 
 ---
 
-# 🛠️ Tech Stack  
+## 🛠️ Tech Stack
 
-| Layer                    | Technology                                  |
-| ------------------------ | ------------------------------------------- |
-| ELT & Data Ingestion     | Python, API clients, Web Scraping           |
-| Database                 | PostgreSQL / Snowflake / SQL Server         |
-| Semantic Layer           | dbt                                          |
-| Data Validation          | Python, Pandas                              |
-| Feature Store            | Python, SQL                                 |
-| Machine Learning         | Scikit-learn, XGBoost, MLflow               |
-| Orchestration            | Apache Airflow                              |
-| KPI Engine               | Python + SQL                                |
-| API Layer                | FastAPI                                     |
-| App Layer                | Streamlit                                   |
-| Visualization            | Power BI, Tableau                           |
-| Logging                  | Python logging                              |
-| Testing                  | Pytest                                      |
+| Layer | Technology |
+|-------|------------|
+| Data Source | CSV (AtliQ Grands) |
+| Database | PostgreSQL |
+| Semantic Layer | dbt |
+| ML Pipeline | scikit-learn, Random Forest, XGBoost |
+| Experiment Tracking | MLflow |
+| API Layer | FastAPI + Pydantic |
+| UI Layer | Streamlit + Plotly + Matplotlib |
+| Containerization | Docker + Docker Compose |
+| Deployment | HuggingFace Spaces |
+| Logging | Python logging |
+| Language | Python 3.12 |
 
 ---
 
-# 📌 Roadmap
+## 📌 Roadmap
 
-### ✅ Shipped (Phase 1)
-- [x] Architecture design
-- [x] Data ingestion layer (PostgreSQL + dbt)
-- [x] Data validation & feature store
-- [x] Semantic layer (dbt: `fct_bookings_enriched`, `mtr_occupancy`)
-- [x] KPI engine
-- [x] Diagnostic analytics
+### ✅ Phase 1 — Data & ML (Shipped May 14, 2026)
+- [x] PostgreSQL ingestion + dbt semantic layer
+- [x] 10-Layer KPI Framework
 - [x] Time-based train/val/test splitter (60/20/20)
-- [x] sklearn preprocessing pipeline (generic engine)
-- [x] **Rate Forecaster (RPO)** — Random Forest, Test R² = 0.80
-- [x] **Demand Forecaster** — XGBoost, Test R² = 0.76
+- [x] YAML config-driven preprocessing engine
+- [x] Rate Forecaster (Random Forest, R²=0.80)
+- [x] Demand Forecaster (XGBoost, R²=0.76)
 
-### 🚧 In Progress (Phase 2)
+### ✅ Phase 2 — Production & Deployment (Shipped May 16-17, 2026)
+- [x] FastAPI service (`/predict_rate`, `/predict_demand`)
+- [x] 3-layer business guardrails
+- [x] Streamlit dashboard (Whatiftool + Demand + Rate pages)
+- [x] 9-point demand curve with revenue optimization
+- [x] Hurdle rate logic + confidence range disclosure
+- [x] Docker Compose multi-container orchestration
+- [x] MLflow experiment tracking
+- [x] HuggingFace Spaces public deployment
+
+### 🚧 Phase 3 — In Progress
+- [ ] Tableau Public + Power BI executive dashboards (connected to PostgreSQL)
 - [ ] `lead_time` feature engineering
-- [ ] MLflow experiment tracking
 - [ ] Hyperparameter tuning (GridSearchCV)
 - [ ] TimeSeriesSplit cross-validation
 
-### 📋 Planned (Phase 3)
+### 📋 Phase 4 — Planned
+- [ ] MLflow Model Registry (versioning + staging)
+- [ ] Airflow DAGs (scheduled retraining)
+- [ ] A/B testing framework
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Pytest test suite
 - [ ] ADR + RevPAR derived forecasts
 - [ ] Backtesting engine
-- [ ] FastAPI serving endpoints
-- [ ] Streamlit dashboards (hotelier UI)
-- [ ] Airflow DAGs
-- [ ] Power BI / Tableau dashboards
-- [ ] Docker containerization
-- [ ] Tests directory (pytest)
 
 ---
 
-## 🚀 Running the Pipeline
+## 🚀 Running the Project
 
 ### Prerequisites
 - Python 3.12+
+- Docker + Docker Compose
 - PostgreSQL with AtliQ Grands data loaded
 - dbt models materialized (`fct_bookings_enriched`, `mtr_occupancy`)
 
-### Installation
+### Local Installation
+
 ```bash
 git clone https://github.com/MOO242/Hotel-Performance-Optimizer.git
 cd Hotel-Performance-Optimizer
@@ -315,18 +279,79 @@ cp .env.example .env
 # Edit .env with PostgreSQL credentials
 ```
 
-### Execution
+### Training Pipeline (One-time setup)
+
 ```bash
 # Step 1: Time-based train/val/test split
 python -m src.mlpipeline.data_splitter
 
 # Step 2: Feature preprocessing (sklearn pipeline)
-python -m src.mlpipeline.data_transformation
+python -m src.mlpipeline.data_transformation_engine
 
-# Step 3: Train models (choose one)
-python -m src.mlpipeline.rate_forecast      # Rate Forecaster (RPO)
+# Step 3: Train models
+python -m src.mlpipeline.rate_forecast      # Rate Forecaster
 python -m src.mlpipeline.demand_forecast    # Demand Forecaster
 ```
+
+### Running The Service (Docker Compose)
+
+```bash
+# Build and start both FastAPI + Streamlit containers
+docker compose up --build
+
+# Access:
+#   FastAPI:    http://localhost:8000
+#   FastAPI docs: http://localhost:8000/docs
+#   Streamlit:  http://localhost:8501
+```
+
+### Running Without Docker
+
+```bash
+# Terminal 1: FastAPI
+uvicorn src.api.serve:app --reload --port 8000
+
+# Terminal 2: Streamlit
+streamlit run streamlit_app/whatiftool.py
+```
+
+---
+
+## 🔬 Example API Call
+
+```bash
+curl -X POST http://localhost:8000/predict_rate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "city": "Mumbai",
+    "room_type": "RT1",
+    "booking_channel": "direct online",
+    "day_type": "weekday",
+    "property_id": "16559",
+    "season": "Peak",
+    "room_class": "Premium",
+    "category": "Luxury",
+    "number_of_guests": 2,
+    "number_of_nights": 3,
+    "guest_rating_score": 4.5,
+    "hurdle_rate": 433.33
+  }'
+
+# Response:
+# {"prediction": 9750.0}
+```
+
+---
+
+## 💡 Key Engineering Decisions
+
+1. **Time-based split, not random** — prevents data leakage on a temporal target
+2. **Generic preprocessor + YAML configs** — one engine serves two models, third is a config file
+3. **Business guardrails over retraining** — clamp at API layer, disclose in UI, validate in schema
+4. **Disclose model MAE in UI** — revenue managers see confidence ranges, not just point estimates
+5. **Load pickles at startup** — predictions are O(1), not O(file_load)
+6. **Multi-container Docker** — FastAPI and Streamlit deploy independently, scale independently
+7. **synthetic data, real patterns** — engineering is portable, not the numbers
 
 ---
 
@@ -336,6 +361,6 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🖼️ Architecture Diagram  
+## 🖼️ Architecture Diagram
 
 ![Hotel Performance Optimizer Architecture](https://github.com/MOO242/Hotel-Performance-Optimizer/blob/main/Project_architecture.png)
