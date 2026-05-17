@@ -148,7 +148,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     try:
 
-        logger.info("Starting demand forecasting pipeline...")
+        logger.info("Starting Hotel Forecast Model Trainer...")
 
         # Model forecast
         active_config = FeaturePreprocessorConfig(
