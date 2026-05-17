@@ -10,6 +10,7 @@ Endpoints:
 """
 
 import pandas as pd
+import mlflow
 from fastapi import FastAPI, HTTPException
 
 from src.api.schemas import (
@@ -20,6 +21,10 @@ from src.api.schemas import (
 )
 from src.api.model_loader import ModelLoader, ModelConfig
 from src.components.logger import logger
+
+# === MLFLOW SETUP ===
+mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_experiment("HotelPerformanceOptimizer")
 
 # === APP INITIALIZATION ===
 app = FastAPI(
@@ -76,6 +81,16 @@ def predict_rate(booking: RateBookingInput):
 
         logger.info(f"Rate prediction: ₹{prediction:.2f}")
 
+        # === MLFLOW LOGGING ===
+        with mlflow.start_run(run_name="predict_rate"):
+            # Log all inputs as parameters
+            for key, value in booking.model_dump().items():
+                mlflow.log_param(key, value)
+            # Log prediction as metric
+            mlflow.log_metric("predicted_rate", float(prediction))
+            mlflow.set_tag("endpoint", "predict_rate")
+            mlflow.set_tag("model", "RandomForest_Rate_v1.0")
+
         return RatePredictionResponse(
             prediction=float(prediction),
         )
@@ -100,6 +115,16 @@ def predict_demand(Demand: DemandBookingInput):
         prediction = demand_loader.model_file.predict(X)[0]
         logger.info(f"Raw prediction before clamp: {prediction}")
         logger.info(f"Demand prediction : {prediction:.2f} room")
+
+        # === MLFLOW LOGGING ===
+        with mlflow.start_run(run_name="predict_demand"):
+            # Log all inputs as parameters
+            for key, value in Demand.model_dump().items():
+                mlflow.log_param(key, value)
+            # Log prediction as metric
+            mlflow.log_metric("predicted_demand", max(0.0, float(prediction)))
+            mlflow.set_tag("endpoint", "predict_demand")
+            mlflow.set_tag("model", "RandomForest_Demand_v1.0")
 
         return DemandPredictionResponse(prediction=max(0.0, float(prediction)))
 
