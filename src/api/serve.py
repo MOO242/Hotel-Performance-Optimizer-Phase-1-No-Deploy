@@ -89,18 +89,19 @@ def predict_rate(booking: RateBookingInput):
 def predict_demand(Demand: DemandBookingInput):
     """Predict rooms sold for a hotel-date."""
     try:
+
         df = pd.DataFrame([Demand.model_dump()])
+        logger.info(f"Production DataFrame structure:\n{df.dtypes}")
+        logger.info(f"Production DataFrame columns order: {list(df.columns)}")
         X = demand_loader.preprocessor_file.transform(df)
 
         if hasattr(X, "toarray"):
             X = X.toarray()
         prediction = demand_loader.model_file.predict(X)[0]
-
+        logger.info(f"Raw prediction before clamp: {prediction}")
         logger.info(f"Demand prediction : {prediction:.2f} room")
 
-        return DemandPredictionResponse(
-            prediction=float(prediction),
-        )
+        return DemandPredictionResponse(prediction=max(0.0, float(prediction)))
 
     except Exception as e:
         logger.error(f"Demand prediction failed: {e}")

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Literal
+from datetime import date
 
 """
 schemas.py
@@ -45,15 +46,22 @@ class RatePredictionResponse(BaseModel):
 class DemandBookingInput(BaseModel):
     # numerical
     rooms_available: int = Field(..., ge=0)
+    check_in_date: date = Field(..., description="Check-in date")
+    adr: float = Field(..., ge=0)
 
     # nominal
 
     property_id: str = Field(..., description="Hotel property ID(as string)")
     room_category: Literal["RT1", "RT2", "RT3", "RT4"]
+    booking_channel: str = Field(..., description="Booking channel")
+    city: str = Field(..., description="Hotel city")
+
+    # ordinal
+    category: Literal["Economy", "Luxury"]
 
 
 class DemandPredictionResponse(BaseModel):
 
     prediction: float = Field(..., ge=0, description="Recommended room sold per night")
     model_version: str = "v1.0"
-    model_type: str = "XGBRegressor"
+    model_type: str = "RandomForestRegressor"

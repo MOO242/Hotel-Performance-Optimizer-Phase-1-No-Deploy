@@ -50,9 +50,10 @@ class FeaturePreprocessor:
             cols = schema["features"]
             numerical_columns = cols["numerical"]
             nominal_columns = cols["nominal"]
-            ordinal_dict = cols.get("ordinal", {})
-            if ordinal_dict:
-                ordinal_columns = list(cols["ordinal"].keys())
+            ordinal_columns = cols["ordinal"]
+            ordinal_config = cols.get("ordinal", {})
+            if ordinal_config:
+                ordinal_columns = list(ordinal_config.keys())
                 ordinal_categories = [cols["ordinal"][col] for col in ordinal_columns]
             else:
                 ordinal_columns = []
@@ -121,13 +122,13 @@ class FeaturePreprocessor:
             drop_cols = schema["drop_cols"]
             target_col = schema["model"]["target_column"]
 
-            X_train = train_df.drop(columns=drop_cols, errors="ignore")
+            X_train = train_df.drop(columns=drop_cols + [target_col], errors="ignore")
             y_train = train_df[target_col]
 
-            X_val = val_df.drop(columns=drop_cols, errors="ignore")
+            X_val = val_df.drop(columns=drop_cols + [target_col], errors="ignore")
             y_val = val_df[target_col]
 
-            X_test = test_df.drop(columns=drop_cols, errors="ignore")
+            X_test = test_df.drop(columns=drop_cols + [target_col], errors="ignore")
             y_test = test_df[target_col]
 
             preprocessor = self.get_preprocessor()
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     # Rate transformation
     active_config = FeaturePreprocessorConfig(
         date_column="check_in_date",
-        table_name="fct_bookings_enriched",
+        table_name="mtr_occupancy",
         config_path=args.config,
     )
 

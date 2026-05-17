@@ -9,15 +9,17 @@ data:
 features:
   numerical:
   - rooms_available
+  - adr
 
   nominal:
   - room_category
+  - booking_channel
   - property_id
+  - city
 
-  ordinal: {}
+  ordinal: 
+    category: [ Economy, Luxury ]
 
 drop_cols:
-- revpar
-- occupancy_rate
-- adr
 - total_revenue
+- rooms_sold 
